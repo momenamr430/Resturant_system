@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Restaurant System</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Georgia, serif; background: #1a1a1a; color: #f0ece0; min-height: 100vh; }
+
+  header {
+    background: #111; padding: 20px 40px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 2px solid #c8a96e;
+  }
+  header h1 { font-size: 26px; color: #c8a96e; letter-spacing: 2px; text-transform: uppercase; }
+  nav { display: flex; gap: 10px; }
+  nav button {
+    background: transparent; border: 1px solid #c8a96e; color: #c8a96e;
+    padding: 8px 20px; cursor: pointer; font-size: 14px; border-radius: 4px; transition: all 0.2s;
+  }
+  nav button:hover, nav button.active { background: #c8a96e; color: #111; }
+
+  .page { display: none; padding: 40px; max-width: 960px; margin: 0 auto; }
+  .page.active { display: block; }
+
+  h2 { color: #c8a96e; font-size: 22px; margin-bottom: 24px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+
+  .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px; }
+  .menu-card { background: #222; border: 1px solid #333; border-radius: 8px; padding: 16px; text-align: center; }
+  .menu-card .item-name { font-size: 16px; font-weight: bold; color: #f0ece0; margin-bottom: 8px; text-transform: capitalize; }
+  .menu-card .item-price { font-size: 18px; color: #c8a96e; margin-bottom: 4px; }
+  .menu-card .item-qty { font-size: 13px; color: #888; }
+
+  .section { background: #222; border: 1px solid #333; border-radius: 8px; padding: 24px; margin-bottom: 24px; }
+  .section h3 { color: #c8a96e; margin-bottom: 16px; font-size: 16px; }
+
+  label { display: block; color: #aaa; font-size: 13px; margin-bottom: 4px; margin-top: 12px; }
+  input, select {
+    width: 100%; padding: 10px 12px; background: #111;
+    border: 1px solid #444; border-radius: 4px; color: #f0ece0; font-size: 14px;
+  }
+  input:focus, select:focus { outline: none; border-color: #c8a96e; }
+
+  .btn {
+    margin-top: 16px; padding: 10px 24px; background: #c8a96e; color: #111;
+    border: none; border-radius: 4px; cursor: pointer; font-size: 14px;
+    font-weight: bold; width: 100%; transition: background 0.2s;
+  }
+  .btn:hover { background: #e0bf80; }
+  .btn-danger { background: #8b2020; color: #f0ece0; }
+  .btn-danger:hover { background: #a52828; }
+  .btn-sm {
+    padding: 6px 14px; font-size: 13px; width: auto; margin-top: 0;
+    background: #c8a96e; color: #111; border: none; border-radius: 4px;
+    cursor: pointer; font-weight: bold; transition: background 0.2s;
+  }
+  .btn-sm:hover { background: #e0bf80; }
+  .btn-sm-danger {
+    padding: 6px 14px; font-size: 13px; width: auto; margin-top: 0;
+    background: #8b2020; color: #f0ece0; border: none; border-radius: 4px;
+    cursor: pointer; transition: background 0.2s;
+  }
+  .btn-sm-danger:hover { background: #a52828; }
+
+  .cart-row { display: flex; align-items: center; gap: 10px; margin-top: 12px; background: #1a1a1a; border-radius: 6px; padding: 10px 12px; }
+  .cart-row select { flex: 2; margin-top: 0; }
+  .cart-row input  { flex: 1; margin-top: 0; min-width: 60px; }
+  .add-row-btn {
+    margin-top: 12px; background: transparent; border: 1px dashed #c8a96e;
+    color: #c8a96e; padding: 8px; width: 100%; border-radius: 4px;
+    cursor: pointer; font-size: 14px; transition: all 0.2s;
+  }
+  .add-row-btn:hover { background: #2a2010; }
+  .cart-total { margin-top: 14px; font-size: 15px; color: #c8a96e; text-align: right; }
+
+  .step-label { font-size: 12px; color: #c8a96e; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; display: block; }
+  .tables-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 16px; }
+  .table-btn {
+    padding: 14px 0; border-radius: 6px; border: 2px solid #3a6a3a;
+    background: #1a3a1a; color: #6dbe6d; font-size: 14px; font-weight: bold;
+    cursor: pointer; transition: all 0.2s; text-align: center;
+  }
+  .table-btn:hover { background: #3a6a3a; color: #c8ffb0; }
+  .table-btn.taken { background: #2a1a1a; border-color: #5a2a2a; color: #884444; cursor: not-allowed; }
+  #tables-section { display: none; margin-top: 20px; }
+  #food-with-res  { display: none; margin-top: 20px; }
+
+  .confirm-box { background: #1a1a2a; border: 1px solid #c8a96e; border-radius: 8px; padding: 20px; margin-top: 16px; text-align: center; }
+  .confirm-box p { margin-bottom: 16px; font-size: 15px; }
+  .two-btn { display: flex; gap: 10px; }
+  .two-btn button { flex: 1; margin-top: 0; }
+
+  .list-item { display: flex; justify-content: space-between; align-items: flex-start; padding: 12px 0; border-bottom: 1px solid #333; gap: 10px; }
+  .list-item:last-child { border-bottom: none; }
+  .list-item .info { flex: 1; }
+  .list-item .info span { display: block; }
+  .list-item .info .main { font-size: 15px; color: #f0ece0; }
+  .list-item .info .sub  { font-size: 13px; color: #888; margin-top: 2px; }
+  .list-item .info .food-tag { font-size: 13px; color: #c8a96e; margin-top: 4px; }
+  .list-item .actions { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+  .inline-order { background: #1a1a1a; border-radius: 6px; padding: 14px; margin-top: 10px; display: none; }
+
+  .tab-bar { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+  .tab-btn { padding: 8px 18px; background: transparent; border: 1px solid #555; color: #aaa; border-radius: 4px; cursor: pointer; font-size: 13px; transition: all 0.2s; }
+  .tab-btn:hover { border-color: #c8a96e; color: #c8a96e; }
+  .tab-btn.active { background: #c8a96e; color: #111; border-color: #c8a96e; font-weight: bold; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  .badge { display: inline-block; background: #3a6a3a; color: #6dbe6d; font-size: 11px; padding: 2px 8px; border-radius: 10px; margin-left: 8px; }
+
+  .msg { padding: 12px 16px; border-radius: 4px; margin-top: 12px; font-size: 14px; display: none; }
+  .msg.success { background: #1a3a1a; color: #6dbe6d; border: 1px solid #3a6a3a; }
+  .msg.error   { background: #3a1a1a; color: #e07070; border: 1px solid #6a3a3a; }
+  .empty { color: #666; text-align: center; padding: 20px; font-style: italic; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🍽 Restaurant</h1>
+  <nav>
+    <button class="active" onclick="showPage('menu',this)">Food Menu</button>
+    <button onclick="showPage('reservation',this)">Reservation</button>
+    <button onclick="showPage('admin',this)">Admin</button>
+  </nav>
+</header>
+
+<!-- ========== MENU PAGE ========== -->
+<div id="menu" class="page active">
+  <h2>Our Menu</h2>
+  <div class="menu-grid" id="menu-grid"></div>
+  <div class="section">
+    <h3>Place an Order</h3>
+    <div id="cart-rows"></div>
+    <button class="add-row-btn" onclick="addCartRow('cart-rows','cart-total')">+ Add Another Item</button>
+    <div class="cart-total" id="cart-total"></div>
+    <button class="btn" onclick="placeOrder()">Order Now</button>
+    <div id="order-msg" class="msg"></div>
+  </div>
+</div>
+
+<!-- ========== RESERVATION PAGE ========== -->
+<div id="reservation" class="page">
+  <h2>Table Reservations</h2>
+  <div class="section">
+    <h3>Add Reservation</h3>
+    <span class="step-label">Step 1 — Your details & time</span>
+    <label>Your Name</label>
+    <input type="text" id="res-name" placeholder="e.g. Ahmed">
+    <label>Time (24-hour, e.g. 14:30)</label>
+    <input type="text" id="res-time" placeholder="HH:MM">
+    <button class="btn" onclick="checkAvailableTables()">Check Available Tables</button>
+
+    <div id="tables-section">
+      <span class="step-label" style="margin-top:20px;">Step 2 — Choose a table</span>
+      <p style="font-size:13px;color:#888;margin-top:4px;">Green = available &nbsp;|&nbsp; Red = taken</p>
+      <div class="tables-grid" id="tables-grid"></div>
+    </div>
+
+    <div id="food-with-res">
+      <div class="confirm-box">
+        <p>Table <strong id="chosen-table-label"></strong> reserved ✓<br><br>Would you like to pre-order food with this reservation?</p>
+        <div class="two-btn">
+          <button class="btn" onclick="showResFood()">Yes, order food</button>
+          <button class="btn btn-danger" onclick="finalizeReservation(false)">No, just the table</button>
+        </div>
+      </div>
+      <div id="res-food-panel" style="display:none;margin-top:16px;">
+        <span class="step-label">Select your food</span>
+        <div id="res-cart-rows"></div>
+        <button class="add-row-btn" onclick="addCartRow('res-cart-rows','res-cart-total')">+ Add Another Item</button>
+        <div class="cart-total" id="res-cart-total"></div>
+        <button class="btn" onclick="finalizeReservation(true)">Confirm Reservation + Food</button>
+      </div>
+    </div>
+    <div id="res-msg" class="msg"></div>
+  </div>
+
+  <div class="section">
+    <h3>Current Reservations</h3>
+    <div id="res-list"></div>
+  </div>
+</div>
+
+<!-- ========== ADMIN PAGE ========== -->
+<div id="admin" class="page">
+  <h2>Admin Panel</h2>
+
+  <div id="admin-locked" class="section">
+    <h3>Login</h3>
+    <label>Username</label>
+    <input type="text" id="admin-user" placeholder="Username">
+    <label>Password</label>
+    <input type="password" id="admin-pass" placeholder="Password">
+    <button class="btn" onclick="adminLogin()">Login</button>
+    <div id="login-msg" class="msg"></div>
+  </div>
+
+  <div id="admin-panel" style="display:none;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <span style="color:#888;font-size:14px;">Logged in as: <strong id="admin-name-label" style="color:#c8a96e;"></strong></span>
+      <button class="btn-sm-danger" onclick="adminLogout()">Logout</button>
+    </div>
+
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="switchTab('tab-inventory',this)">Inventory</button>
+      <button class="tab-btn" onclick="switchTab('tab-add',this)">Add Item</button>
+      <button class="tab-btn" onclick="switchTab('tab-price',this)">Update Price</button>
+      <button class="tab-btn" onclick="switchTab('tab-admins',this)">Manage Admins</button>
+    </div>
+
+    <div id="tab-inventory" class="tab-panel active">
+      <div class="section"><h3>Current Inventory</h3><div id="inventory-list"></div></div>
+    </div>
+
+    <div id="tab-add" class="tab-panel">
+      <div class="section">
+        <h3>Add / Update Item</h3>
+        <label>Name</label><input type="text" id="add-name" placeholder="Item name">
+        <label>Quantity</label><input type="number" id="add-qty" placeholder="Quantity" min="1">
+        <label>Price (EGP)</label><input type="number" id="add-price" placeholder="Price" min="0">
+        <button class="btn" onclick="addItem()">Add / Update Item</button>
+        <div id="add-msg" class="msg"></div>
+      </div>
+    </div>
+
+    <div id="tab-price" class="tab-panel">
+      <div class="section">
+        <h3>Update Price</h3>
+        <label>Select Item</label><select id="update-item"></select>
+        <label>New Price (EGP)</label><input type="number" id="update-price" placeholder="New price" min="0">
+        <button class="btn" onclick="updatePrice()">Update Price</button>
+        <div id="update-msg" class="msg"></div>
+      </div>
+    </div>
+
+    <div id="tab-admins" class="tab-panel">
+      <div class="section"><h3>Admin List</h3><div id="admin-list"></div></div>
+      <div class="section">
+        <h3>Add New Admin</h3>
+        <label>Username</label><input type="text" id="new-admin-user" placeholder="New username">
+        <label>Password</label><input type="password" id="new-admin-pass" placeholder="New password">
+        <button class="btn" onclick="addAdmin()">Add Admin</button>
+        <div id="admin-msg" class="msg"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ================================================================
+//  DATA
+// ================================================================
+var defaultInventory = [
+  { name:"Pizza",        quantity:10, price:200 },
+  { name:"Burger",       quantity:15, price:90  },
+  { name:"Caesar Salad", quantity:8,  price:120 },
+  { name:"Mushroom Soup",quantity:12, price:100 }
+];
+var defaultAdmins = [{ username:"admin", password:"1234" }];
+
+function getInventory()     { try { var d=localStorage.getItem("ri"); return d?JSON.parse(d):defaultInventory; } catch(e){ return defaultInventory; } }
+function saveInventory(v)   { localStorage.setItem("ri", JSON.stringify(v)); }
+function getReservations()  { try { var d=localStorage.getItem("rr"); return d?JSON.parse(d):[]; } catch(e){ return []; } }
+function saveReservations(v){ localStorage.setItem("rr", JSON.stringify(v)); }
+function getAdmins()        { try { var d=localStorage.getItem("ra"); return d?JSON.parse(d):defaultAdmins; } catch(e){ return defaultAdmins; } }
+function saveAdmins(v)      { localStorage.setItem("ra", JSON.stringify(v)); }
+
+var currentAdmin = null;
+var pendingRes   = null;
+
+// ================================================================
+//  NAVIGATION
+// ================================================================
+function showPage(id, btn) {
+  document.querySelectorAll(".page").forEach(function(p){ p.classList.remove("active"); });
+  document.querySelectorAll("nav button").forEach(function(b){ b.classList.remove("active"); });
+  document.getElementById(id).classList.add("active");
+  if (btn) btn.classList.add("active");
+  if (id==="menu")        { renderMenu(); buildCartRows("cart-rows","cart-total"); }
+  if (id==="reservation") { renderReservations(); }
+}
+
+function switchTab(id, btn) {
+  document.querySelectorAll(".tab-panel").forEach(function(p){ p.classList.remove("active"); });
+  document.querySelectorAll(".tab-btn").forEach(function(b){ b.classList.remove("active"); });
+  document.getElementById(id).classList.add("active");
+  btn.classList.add("active");
+}
+
+// ================================================================
+//  MENU
+// ================================================================
+function renderMenu() {
+  var inv  = getInventory();
+  var grid = document.getElementById("menu-grid");
+  grid.innerHTML = "";
+  inv.forEach(function(item){
+    grid.innerHTML += '<div class="menu-card">'
+      + '<div class="item-name">'+item.name+'</div>'
+      + '<div class="item-price">'+item.price+' EGP</div>'
+      + '<div class="item-qty">In stock: '+item.quantity+'</div>'
+      + '</div>';
+  });
+}
+
+// ================================================================
+//  CART (reusable)
+// ================================================================
+function buildCartRows(containerId, totalId) {
+  document.getElementById(containerId).innerHTML = "";
+  addCartRow(containerId, totalId);
+}
+
+function addCartRow(containerId, totalId) {
+  var inv = getInventory();
+  var container = document.getElementById(containerId);
+  var row = document.createElement("div");
+  row.className = "cart-row";
+
+  var sel = document.createElement("select");
+  sel.style.marginTop = "0";
+  inv.forEach(function(item){
+    var o = document.createElement("option");
+    o.value = item.name;
+    o.textContent = item.name + " (" + item.price + " EGP)";
+    sel.appendChild(o);
+  });
+
+  var qInput = document.createElement("input");
+  qInput.type = "number"; qInput.value = 1; qInput.min = 1;
+  qInput.style.marginTop = "0";
+
+  function updateMax() {
+    var idx = inv.findIndex(function(x){ return x.name===sel.value; });
+    qInput.max = idx!==-1 ? inv[idx].quantity : 1;
+    if (parseInt(qInput.value) > parseInt(qInput.max)) qInput.value = qInput.max;
+    calcTotal(containerId, totalId);
+  }
+  sel.onchange = updateMax;
+  qInput.oninput = function(){ calcTotal(containerId, totalId); };
+  updateMax();
+
+  var removeBtn = document.createElement("button");
+  removeBtn.className = "btn-sm-danger";
+  removeBtn.style.marginTop = "0";
+  removeBtn.textContent = "✕";
+  removeBtn.onclick = function(){
+    if (container.querySelectorAll(".cart-row").length > 1){ row.remove(); calcTotal(containerId, totalId); }
+  };
+
+  row.appendChild(sel); row.appendChild(qInput); row.appendChild(removeBtn);
+  container.appendChild(row);
+  calcTotal(containerId, totalId);
+}
+
+function calcTotal(containerId, totalId) {
+  var inv = getInventory();
+  var total = 0;
+  document.querySelectorAll("#"+containerId+" .cart-row").forEach(function(row){
+    var name = row.querySelector("select").value;
+    var qty  = parseInt(row.querySelector("input").value)||0;
+    var item = inv.find(function(x){ return x.name===name; });
+    if (item) total += item.price * qty;
+  });
+  var el = document.getElementById(totalId);
+  el.textContent = total > 0 ? "Total: " + total + " EGP" : "";
+}
+
+function getCartItems(containerId) {
+  var inv = getInventory();
+  var items = []; var ok = true;
+  document.querySelectorAll("#"+containerId+" .cart-row").forEach(function(row){
+    var name = row.querySelector("select").value;
+    var qty  = parseInt(row.querySelector("input").value)||0;
+    var idx  = inv.findIndex(function(x){ return x.name===name; });
+    if (idx===-1 || inv[idx].quantity<qty || qty<1){ ok=false; return; }
+    items.push({ name:name, qty:qty, price:inv[idx].price, idx:idx });
+  });
+  return ok ? items : null;
+}
+
+function placeOrder() {
+  var msg   = document.getElementById("order-msg");
+  var items = getCartItems("cart-rows");
+  if (!items){ showMsg(msg,"Check quantities — some items may be out of stock.","error"); return; }
+  var inv=getInventory(); var total=0;
+  items.forEach(function(o){ inv[o.idx].quantity-=o.qty; total+=o.price*o.qty; });
+  saveInventory(inv);
+  showMsg(msg,"Order placed! Total: "+total+" EGP ✓","success");
+  renderMenu(); buildCartRows("cart-rows","cart-total");
+}
+
+// ================================================================
+//  RESERVATIONS
+// ================================================================
+function isValidTime(t) {
+  if (!t||t.length!==5||t[2]!==':') return false;
+  var h=parseInt(t.substr(0,2)), m=parseInt(t.substr(3,2));
+  return h>=0&&h<24&&m>=0&&m<60;
+}
+
+function checkAvailableTables() {
+  var name = document.getElementById("res-name").value.trim();
+  var time = document.getElementById("res-time").value.trim();
+  var msg  = document.getElementById("res-msg");
+  if (!name){ showMsg(msg,"Please enter your name.","error"); return; }
+  if (!isValidTime(time)){ showMsg(msg,"Invalid time. Use HH:MM (e.g. 14:30)","error"); return; }
+
+  var res = getReservations();
+  var taken = res.filter(function(r){ return r.time===time; }).map(function(r){ return r.table; });
+  var grid = document.getElementById("tables-grid");
+  grid.innerHTML = "";
+
+  for (var t=1; t<=15; t++) {
+    var isTaken = taken.indexOf(t)!==-1;
+    var btn = document.createElement("div");
+    btn.className = "table-btn"+(isTaken?" taken":"");
+    btn.textContent = "T"+t;
+    if (!isTaken) {
+      (function(tableNum){ btn.onclick = function(){ selectTable(tableNum,name,time); }; })(t);
+    }
+    grid.appendChild(btn);
+  }
+  document.getElementById("tables-section").style.display = "block";
+  document.getElementById("food-with-res").style.display  = "none";
+}
+
+function selectTable(table, name, time) {
+  pendingRes = { table:table, name:name, time:time, food:[] };
+  document.getElementById("chosen-table-label").textContent = table+" at "+time+" ("+name+")";
+  document.getElementById("food-with-res").style.display  = "block";
+  document.getElementById("res-food-panel").style.display = "none";
+  document.getElementById("tables-section").style.display = "none";
+}
+
+function showResFood() {
+  document.getElementById("res-food-panel").style.display = "block";
+  buildCartRows("res-cart-rows","res-cart-total");
+}
+
+function finalizeReservation(withFood) {
+  var msg = document.getElementById("res-msg");
+  var inv = getInventory();
+  var res = getReservations();
+  if (res.length>=50){ showMsg(msg,"Reservation system is full!","error"); return; }
+
+  var foodItems = [];
+  if (withFood) {
+    var items = getCartItems("res-cart-rows");
+    if (!items){ showMsg(msg,"Check food quantities.","error"); return; }
+    items.forEach(function(f){ inv[f.idx].quantity-=f.qty; });
+    saveInventory(inv);
+    foodItems = items.map(function(f){ return {name:f.name,qty:f.qty}; });
+  }
+
+  pendingRes.food = foodItems;
+  res.push(pendingRes);
+  saveReservations(res);
+
+  showMsg(msg,"Reservation confirmed: Table "+pendingRes.table+" at "+pendingRes.time+(withFood?" + food pre-ordered ✓":""),"success");
+  pendingRes = null;
+  document.getElementById("res-name").value = "";
+  document.getElementById("res-time").value = "";
+  document.getElementById("tables-section").style.display = "none";
+  document.getElementById("food-with-res").style.display  = "none";
+  renderReservations(); renderMenu();
+}
+
+function renderReservations() {
+  var res  = getReservations();
+  var list = document.getElementById("res-list");
+  if (res.length===0){ list.innerHTML='<div class="empty">No reservations yet.</div>'; return; }
+
+  list.innerHTML = res.map(function(r,i){
+    var foodHtml = (r.food&&r.food.length>0)
+      ? '<span class="food-tag">🍽 '+r.food.map(function(f){ return f.qty+"x "+f.name; }).join(", ")+'</span>' : "";
+    var orderBtn = (!r.food||r.food.length===0)
+      ? '<button class="btn-sm" onclick="toggleInlineOrder('+i+')">Order Food</button>' : '';
+    return '<div class="list-item">'
+      + '<div class="info">'
+      +   '<span class="main">Table '+r.table+' &nbsp;<span style="color:#888;font-weight:normal;font-size:13px;">— '+r.name+'</span></span>'
+      +   '<span class="sub">Time: '+r.time+'</span>'
+      +   foodHtml
+      +   '<div class="inline-order" id="inline-'+i+'">'+buildInlineOrderHTML(i)+'</div>'
+      + '</div>'
+      + '<div class="actions">'+orderBtn+'<button class="btn-sm-danger" onclick="cancelReservation('+i+')">Cancel</button></div>'
+      + '</div>';
+  }).join("");
+}
+
+function buildInlineOrderHTML(i) {
+  var inv  = getInventory();
+  var opts = inv.map(function(item){ return '<option value="'+item.name+'">'+item.name+' ('+item.price+' EGP)</option>'; }).join("");
+  return '<div style="margin-top:10px;">'
+    + '<label style="margin-top:0;">Item</label><select id="isel-'+i+'" style="margin-top:4px;">'+opts+'</select>'
+    + '<label>Quantity</label><input type="number" id="iqty-'+i+'" value="1" min="1" style="margin-top:4px;">'
+    + '<button class="btn" style="margin-top:10px;" onclick="addFoodToReservation('+i+')">Add to Reservation</button>'
+    + '</div>';
+}
+
+function toggleInlineOrder(i) {
+  var el = document.getElementById("inline-"+i);
+  if (el) el.style.display = el.style.display==="block" ? "none" : "block";
+}
+
+function addFoodToReservation(i) {
+  var inv  = getInventory();
+  var name = document.getElementById("isel-"+i).value;
+  var qty  = parseInt(document.getElementById("iqty-"+i).value)||0;
+  var res  = getReservations();
+  var idx  = inv.findIndex(function(x){ return x.name===name; });
+  if (idx===-1||inv[idx].quantity<qty||qty<1){ alert("Not enough stock for: "+name); return; }
+  inv[idx].quantity -= qty;
+  saveInventory(inv);
+  if (!res[i].food) res[i].food=[];
+  var existing = res[i].food.find(function(f){ return f.name===name; });
+  if (existing) existing.qty+=qty;
+  else res[i].food.push({name:name,qty:qty});
+  saveReservations(res);
+  renderReservations(); renderMenu();
+}
+
+function cancelReservation(i) {
+  var res = getReservations(); res.splice(i,1); saveReservations(res); renderReservations();
+}
+
+// ================================================================
+//  ADMIN
+// ================================================================
+function adminLogin() {
+  var user   = document.getElementById("admin-user").value.trim();
+  var pass   = document.getElementById("admin-pass").value;
+  var msg    = document.getElementById("login-msg");
+  var admins = getAdmins();
+  var found  = admins.find(function(a){ return a.username===user&&a.password===pass; });
+  if (found) {
+    currentAdmin = user;
+    document.getElementById("admin-locked").style.display = "none";
+    document.getElementById("admin-panel").style.display  = "block";
+    document.getElementById("admin-name-label").textContent = user;
+    renderInventoryAdmin(); renderAdminList();
+  } else {
+    showMsg(msg,"Invalid credentials!","error");
+  }
+}
+
+function adminLogout() {
+  currentAdmin = null;
+  document.getElementById("admin-locked").style.display = "block";
+  document.getElementById("admin-panel").style.display  = "none";
+  document.getElementById("admin-user").value = "";
+  document.getElementById("admin-pass").value = "";
+}
+
+function renderInventoryAdmin() {
+  var inv = getInventory();
+  var list = document.getElementById("inventory-list");
+  var sel  = document.getElementById("update-item");
+  sel.innerHTML = "";
+  if (inv.length===0){ list.innerHTML='<div class="empty">Inventory is empty.</div>'; return; }
+  list.innerHTML = inv.map(function(item,i){
+    return '<div class="list-item">'
+      + '<div class="info"><span class="main">'+item.name+'</span>'
+      + '<span class="sub">Stock: '+item.quantity+' &nbsp;|&nbsp; Price: '+item.price+' EGP</span></div>'
+      + '<div class="actions"><button class="btn-sm-danger" onclick="removeItem('+i+')">Remove</button></div>'
+      + '</div>';
+  }).join("");
+  inv.forEach(function(item){ sel.innerHTML+='<option value="'+item.name+'">'+item.name+'</option>'; });
+}
+
+function addItem() {
+  var name  = document.getElementById("add-name").value.trim();
+  var qty   = parseInt(document.getElementById("add-qty").value);
+  var price = parseInt(document.getElementById("add-price").value);
+  var msg   = document.getElementById("add-msg");
+  var inv   = getInventory();
+  if (!name)           { showMsg(msg,"Enter item name.","error"); return; }
+  if (!qty  ||qty<1)   { showMsg(msg,"Enter valid quantity.","error"); return; }
+  if (!price||price<0) { showMsg(msg,"Enter valid price.","error"); return; }
+  var idx = inv.findIndex(function(x){ return x.name.toLowerCase()===name.toLowerCase(); });
+  if (idx===-1){ inv.push({name:name,quantity:qty,price:price}); showMsg(msg,"Item added: "+name,"success"); }
+  else         { inv[idx].quantity+=qty; showMsg(msg,"Quantity updated for: "+name,"success"); }
+  saveInventory(inv);
+  document.getElementById("add-name").value="";
+  document.getElementById("add-qty").value="";
+  document.getElementById("add-price").value="";
+  renderInventoryAdmin(); renderMenu();
+}
+
+function removeItem(i) {
+  if (!confirm("Remove this item?")) return;
+  var inv = getInventory(); inv.splice(i,1); saveInventory(inv); renderInventoryAdmin(); renderMenu();
+}
+
+function updatePrice() {
+  var name  = document.getElementById("update-item").value;
+  var price = parseInt(document.getElementById("update-price").value);
+  var msg   = document.getElementById("update-msg");
+  var inv   = getInventory();
+  if (!price||price<0){ showMsg(msg,"Enter a valid price.","error"); return; }
+  var idx = inv.findIndex(function(x){ return x.name===name; });
+  if (idx!==-1){ inv[idx].price=price; saveInventory(inv); showMsg(msg,"Price updated for: "+name,"success"); renderInventoryAdmin(); renderMenu(); }
+}
+
+function renderAdminList() {
+  var admins = getAdmins();
+  var list   = document.getElementById("admin-list");
+  list.innerHTML = admins.map(function(a,i){
+    var isSelf = a.username===currentAdmin;
+    return '<div class="list-item">'
+      + '<div class="info"><span class="main">'+a.username+(isSelf?'<span class="badge">you</span>':'')+'</span></div>'
+      + '<div class="actions">'
+      + (!isSelf&&admins.length>1?'<button class="btn-sm-danger" onclick="removeAdmin('+i+')">Remove</button>':'')
+      + '</div></div>';
+  }).join("");
+}
+
+function addAdmin() {
+  var user   = document.getElementById("new-admin-user").value.trim();
+  var pass   = document.getElementById("new-admin-pass").value.trim();
+  var msg    = document.getElementById("admin-msg");
+  var admins = getAdmins();
+  if (!user){ showMsg(msg,"Enter a username.","error"); return; }
+  if (!pass){ showMsg(msg,"Enter a password.","error"); return; }
+  if (admins.find(function(a){ return a.username===user; })){ showMsg(msg,"Username already exists!","error"); return; }
+  admins.push({username:user,password:pass});
+  saveAdmins(admins);
+  showMsg(msg,"Admin '"+user+"' added successfully!","success");
+  document.getElementById("new-admin-user").value="";
+  document.getElementById("new-admin-pass").value="";
+  renderAdminList();
+}
+
+function removeAdmin(i) {
+  var admins = getAdmins();
+  if (admins.length<=1){ alert("Cannot remove the last admin!"); return; }
+  if (admins[i].username===currentAdmin){ alert("Cannot remove yourself!"); return; }
+  if (!confirm("Remove admin '"+admins[i].username+"'?")) return;
+  admins.splice(i,1); saveAdmins(admins); renderAdminList();
+}
+
+function showMsg(el, text, type) {
+  el.textContent=text; el.className="msg "+type; el.style.display="block";
+  setTimeout(function(){ el.style.display="none"; },3500);
+}
+
+// INIT
+renderMenu();
+buildCartRows("cart-rows","cart-total");
+</script>
+</body>
+</html>
